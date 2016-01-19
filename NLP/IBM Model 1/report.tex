@@ -1,0 +1,182 @@
+\documentclass[11pt]{article}
+\usepackage[BoldFont,SlantFont,CJKchecksingle]{xeCJK}
+\usepackage{enumerate}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{paralist}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage[noend]{algpseudocode}
+\usepackage{footmisc}
+\usepackage[colorlinks=true,pdfborder=000,citecolor=magenta,linkcolor=black]{hyperref}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\linespread{1.4}
+\parindent=2em
+\setmainfont{Times New Roman}
+\setCJKmainfont[BoldFont=SimHei]{SimSun} %
+\setCJKmonofont{SimSun}% 设置缺省中文字体
+
+\begin{document}
+\begin{flushleft}
+{\Huge{\textbf{NLP\ \ IBM语言翻译模型\ \ 实验报告}}}\\
+\end{flushleft}
+\section{任务描述}
+\hspace{1.6em} IBM模型是统计机器翻译模型的基础，也是现在统计机器翻译中主流技术中的重要一步~[\ref{note1}]。IBM Model 1主要是考虑了词的对应关系，引入了“对齐”(Alignment)的概念；相比之下，Model 2还考虑了词的位置变化概率这一因素，显然要较Model 1更进化。\\
+\indent 输入：英文句子和对应的中文句子，输出：词对齐结果，由元组$(c_j-e_i)$，即中文词对应的英文词在句中的位置（从0开始标定）
+
+\section{IBM Model 1}
+\subsection{模型建立}
+\hspace{1.6em} 定义英文句子的集合为$\mathcal{E}$，中文句子的集合为$\mathcal{C}$，英文句子$E=(e_1, e_2, \cdots, e_l)$，长度为$l$，中文句子为$C=(c_1, c_2, \cdots, c_m)$，长度为$m$。在此基础上定义对齐$a$，是一个长为$m$的数组，$a[j]=i$表示对应关系：$c_j\rightarrow e_i$，在IBM Model 1中翻译概率可以等价转化为~[\ref{note3}]
+\begin{equation}\label{transp1}
+P(C,a|E)=P(a|E,l,m)\times P(C|a,E,m,l)=\frac{\epsilon}{(l+1)^m}\times \prod_{j=1}^{m}t(c_j|e_{a[j]})
+\end{equation}
+\hspace{1.6em} 其中，$\epsilon$是一个标准化常数；通常我们会在英文句子$E$中增加一个"NULL"作为$e_0$，所以是$(l+1)$；$t(c|e)$表示从英语词$e$生成（翻译）汉语词$c$的条件概率。\\
+\indent IBM Model 1有一个很强的假设，就是所有可能的对齐概率都是一样的，即
+\begin{equation}\label{model1}
+P(a|E,m)=\frac{\epsilon}{(l+1)^m}
+\end{equation}
+\hspace{1.6em} 这在Model 2中做了改进，增加了位置关系概率~[\ref{note2}]~[\ref{note4}]
+\begin{equation}\label{model2q}
+P(a|E,m) = \prod_{j=1}^{m}q(a[j]|j, l, m)
+\end{equation}
+\hspace{1.6em} 其中概率$q(j|i, l, m)$表示在给定英文和中文句长为$l$和$m$时，对齐$a[i]=j$的条件概率。事实上，$q(j|i, l, m)$定义的是关于所有可能的$(i,l,m)$的一系列概率分布：$\langle q(0|i, l, m), q(1|i, l, m), \cdots , q(l|i, l, m)\rangle$，这对于英文句子$E$来说，仍然有一个独立的假设。综上，IBM Model 2的翻译概率即为
+\begin{equation}\label{transp2}
+P(C,a|E)=\prod_{i=1}^{m}q(a[i]|i, l, m)\times \prod_{j=1}^{m}t(c_j|e_{a[j]})
+\end{equation}
+\subsection{模型实现}
+\hspace{1.6em} 假设当前没有Alignment的方式，需要自己训练，就需要用到EM算法进行迭代~[\ref{note3}]。首先对需要计算的参数$t(c|e)$进行初始化，一般采用标准化的方法，即为$1/|\mathcal{C}|$，$|\mathcal{C}|$表示所有的中文词个数。\\
+\indent E-step：使用当前状态的模型，计算概率，$t(c|e)=count(c|e)/total(e)$进行赋值；\\
+\indent M-step：通过上一步得到的$t(c|e)$，重新进行计数，以新的概率分布为权重，更新$count(c|e)$和$total(e)$，伪代码如下：
+
+\begin{algorithm}
+\caption{IBM Model 1 with EM Algorithm}
+    \begin{algorithmic}
+        \State {initialize $t(c|e)=\tfrac{1}{|\mathcal{C}|}$}
+        \Repeat
+        \State { $count(c|e) = 0.0$}
+        \State { $total(e) = 0.0$}
+        \ForAll { sentence pair $\langle E_k, C_k\rangle$}
+            \ForAll { words $c$ in $C_k$}
+                \State { $total\_sum(c) = 0.0 $}
+                \ForAll { words $e$ in $E_k$}
+                    \State { $total\_sum(c)$ += $t(c|e)$}
+                \EndFor
+            \EndFor
+            \ForAll { words $c$ in $C_k$}
+                \ForAll { words $e$ in $E_k$}
+                    \State { $count(c|e)$ += $t(c|e)/total\_sum(c)$}
+                    \State { $total(e)$ += $t(c|e)/total\_sum(c)$}
+                \EndFor
+            \EndFor
+        \EndFor
+        \ForAll { $e$ in domain $total(\cdot)$}
+            \ForAll { $c$ in domain $count(\cdot|e)$}
+                \State { $t(c|e) = count(c|e)/total(e)$}
+            \EndFor
+        \EndFor
+        \Until { $t(c|e)$ convergence}
+    \end{algorithmic}
+\end{algorithm}
+
+\section{IBM Model运用}
+\subsection{Alignment与Decoding~[\ref{note2}]}
+\hspace{1.6em} IBM Model 1最终得到的是翻译概率$t(c|e)$，那么通过这一翻译概率表，得到最可能的Alignment，即求
+\begin{equation}\label{argmaxP}
+\arg\max\limits_{a} P(C,a|E)
+\end{equation}
+\hspace{1.6em} 而对于翻译任务来说，则是计算句子之间的对应概率
+\begin{equation}\label{tranlation1}
+P(C|E) = \sum_{a}P(C,a|E)
+\end{equation}
+\hspace{1.6em} 那么在给定一个语言模型$P(E)$的条件下，我们可以翻译中文句子$C$为$E$，其中$E$是翻译概率最高的。
+\begin{equation}\label{tranlation2}
+\arg\max\limits_{E} P(E)P(C|E)
+\end{equation}
+\subsection{Alignment with Agreement}
+\hspace{1.6em} 直接使用IBM Model 1的$t(c|e)$翻译概率表，生成最可能的对齐~[\ref{note6}]
+\begin{algorithm}
+\caption{IBM Model 1 Alignment}\label{alignment1}
+    \begin{algorithmic}
+        \ForAll { sentence pair $\langle E_k, C_k\rangle$}
+            \ForAll { words $e$ in $E_k$}
+                \State { $bestprob = 0$}
+                \ForAll { words $c$ in $C_k$}
+                    \If { $t(c|e) > bestprob$ }
+                        \State { $bestprob = t(c|e)$}
+                    \EndIf
+                \EndFor
+                \ForAll { words $c$ in $C_k$}
+                    \If { $t(c|e) ==  bestprob$ }
+                        \State { align($k,\,e,\,c$)}
+                    \EndIf
+                \EndFor
+            \EndFor
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+\newline
+\hspace*{1.6em} 为了进一步提高对齐的准确性，[\ref{note5}]中提出了“一致性对齐”的方式。这里，仅仅是简单应用了这一思想，通过对偶化，求得以中文翻译为英文的条件概率表$t(e|c)$，在每次比较最大概率时，从简单的$t(c|e)$转变为$(t(c|e)+t(e|c))$，利用了更多的信息，使对齐的准确率提高。
+
+\section{运行结果分析}
+\hspace{1.6em} 实验过程中发现迭代次数无需太多，$t(c|e)$之间的差距已经较为明显，本实验中迭代了100次，某些结果例如“P(说|~said)”已经十分接近1了。评价方式采用传统的Precision和Recall方式对Alignment结果进行分析，并且为了使得Precision和Recall尽量接近，对~[Alg\ref{alignment1}]~中的$bestprob$进行了下限限制，避免生成过多的alignment结果，修改后的算法如下：
+\begin{algorithm}
+\caption{IBM Model 1 Alignment with Agreement}\label{alignment2}
+    \begin{algorithmic}
+        \ForAll { sentence pair $\langle E_k, C_k\rangle$}
+            \ForAll { words $e$ in $E_k$}
+                \State { $bestprob = 0$}
+                \ForAll { words $c$ in $C_k$}
+                    \If { $(t(c|e)+t(e|c)) > bestprob$ }
+                        \State { $bestprob = (t(c|e)+t(e|c))$}
+                    \EndIf
+                \EndFor
+                \If { $bestprob>\lambda$}
+                    \Comment { $\lambda$ is the threshold to constrain alignment }
+                    \ForAll { words $c$ in $C_k$}
+                        \If { $(t(c|e)+t(e|c)) ==  bestprob$ }
+                            \State { align($k,\,e,\,c$)}
+                        \EndIf
+                    \EndFor
+                \EndIf
+            \EndFor
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+\newline
+\hspace*{1.6em} 生成的Alignment与提供的Alignment比较
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+  \hline
+  算法 & Precision & Recall & Execute Time\\ \hline
+  Alg 2 & 35.18\% & 35.42\% & 7.6s\footnotemark \\ \hline
+  Alg 3(Agreement) & 37.33\% & 37.68\% & 16.7s \\
+  \hline
+\end{tabular}
+\end{center}
+\footnotetext{这里的时间仅需要计算$t(c|e)$，而Alg 3中还计算了$t(e|c)$，时间上大约是两倍关系。}
+\section{实验问题思考}
+\hspace{1.6em} 由于实验中所给的双语语料库较小，只有各100句，所以结果并不理想，如果有更大的语料库理论上能取得更好的结果。\\
+\indent 所用的双语语料库中，已经做好了中文分词的工作，减少了预处理工作，从所给文件看像是手工分词的，如果使用其他方法来分词，对齐的效果将大打折扣，分词是中文自然语言处理的第一步，也是很难的一步。此外，由于所给语料库中有标点符号、常用虚词等因素的影响，从概率上来说，这些经常出现的token可能造成了错误的对应关系，因此需要更大的语料库和更多的迭代次数来消除偏差。\\
+\indent 为了支持程序的可扩展性，可以支持任意的两种语言之间的对应生成，从$t(c|e)$到获得$t(e|c)$的过程是对偶的，只需要把训练时的输入文件对调即可，代码上不需要太大的改动，为了便于阅读，把两部分代码分别写在两个文件中。\\
+\indent 结合之前Michael Collins[\ref{note3}]提到的Phrased-Based Translation Model，这可以作为该项工作的前期准备，运用简单的变换，可以帮助识别出一些短语。
+\section{运行说明}
+\hspace{1.6em} Windows 7 64-bit, Core i3 @2.30GHz, RAM: 6GB；JDK版本：1.8.0\_60，with Eclipse Mars\\
+\indent 把双语语料(test.en.txt, test.ch.txt)和给定的Alignment(test.align.txt)作为程序的输入，编译及运行方法：
+\begin{itemize}
+  \item \texttt{> javac IBMTest.java}
+  \item \texttt{> java IBMTest}
+\end{itemize}
+\hspace*{1.6em} 最终生成的文件主要有$t(c|e)$表(matrixXXX.txt)、$t(e|c)$表(matrixXXXInverse.txt)，XXX表示迭代的次数，以及对其结果myalignment.txt，命令行输出运行情况、对齐的准确率和迭代次数及运行时间。
+
+\section{References}
+\begin{enumerate}[{[}1{]}]
+\item IBM模型学习总结 - \href{http://luowei828.blog.163.com/blog/static/31031204201123010316963/}{ http://luowei828.blog.163.com/blog/static/31031204201123010316963/ }\label{note1}
+\item Philipp Koehn - \href{http://www.inf.ed.ac.uk/teaching/courses/mt/} { Machine Translation }\label{note3} Statistical Machine Translation
+\item Michael Collins - \href{http://www.cs.columbia.edu/~cs4705/}{ Natural Language Processing }\label{note2} Notes on Statistical Machine Translation: IBM Models 1 and 2
+\item Dark\_Scope - \href{http://blog.csdn.net/dark_scope/article/details/8774000}{NLP 学习笔记 04 (Machine Translation)}\label{note4}
+\item Philipp Koehn and Adam Lopez - \href{http://www.inf.ed.ac.uk/teaching/courses/mt/syllabus.html} { Machine Translation }\label{note6}  Reading Materials on Word alignment and the expectation maximization algorithm
+\item Liang P, Taskar B, Klein D. Alignment by agreement[C]//Proceedings of the main conference on Human Language Technology Conference of the North American Chapter of the Association of Computational Linguistics. Association for Computational Linguistics, 2006: 104-111.\label{note5}
+\end{enumerate}
+
+\end{document} 

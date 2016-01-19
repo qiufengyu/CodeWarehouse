@@ -1,0 +1,5 @@
+Execution time is 17.142 seconds.
+precision = 84.7967%
+recall = 52.1500%
+F1 = 64.5820%
+Accuracy = 71.4000%

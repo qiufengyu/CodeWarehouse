@@ -1,0 +1,114 @@
+\documentclass[11pt]{article}
+\usepackage[BoldFont,SlantFont,CJKchecksingle]{xeCJK}
+\usepackage{enumerate}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage[colorlinks=true,pdfborder=000,citecolor=magenta,linkcolor=black]{hyperref}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\linespread{1.4}
+\parindent=2em
+\setmainfont{Times New Roman}
+\setCJKmainfont[BoldFont=SimHei]{SimSun} %
+\setCJKmonofont{SimSun}% 设置缺省中文字体
+\begin{document}
+\begin{flushleft}
+{\Huge{\textbf{NLP\ \ Sentiment Classification\ \ 实验报告}}}\\
+\end{flushleft}
+\section{任务描述}
+\hspace{1.6em} 情感二元分类。根据一段用户主观描述性文本，进行分析和处理，预测或推测该文本的情感取向是具有~\underline{P}ositive或是~\underline{N}egative的色彩。\\
+\indent 任务过程主要有：
+\begin{enumerate}
+  \item 根据训练数据集训练预测模型：对于文本的处理包括分词、特征提取等，建立并根据特征值，训练朴素贝叶斯模型(Naïve Bayes Model)
+  \item 根据预测模型进行预测：以最大概率预测某文本的情感取向为$+$1(P)或$-$1(N)。
+  \item 预测结果评价：使用多种评估标准，如Presicion、Recall、F1-measure和Accuracy，体现预测结果的优劣。
+\end{enumerate}
+\section{分类算法}
+\hspace{1.6em} 主要采用了基于朴素贝叶斯算法的模型，根据文本表示、特征选择的细节上，本实验中采用了Bernoulli文本模型和Multinomial文本模型两种。\\
+\\
+\begin{tabular}{|c|c|p{8cm}|}
+\hline
+具体模型 & 相同点 & \multicolumn{1}{c|}{不同点} \\
+\hline
+\multirow{3}{*}{Bernoulli 文本模型}& \multirow{6}{3cm}{都是基于朴素贝叶斯文本模型，给出最大概率的情感分类取向。}& 文本表示：使用一个二元值\{\ 0, 1\ \}列向量\\ \cline{3-3}
+& & \multirow{2}{*}{概率模型：$\hat{P}(w_t|c_k)=\dfrac{n_k(w_t)}{N_k}$}\\
+ & & \\ \cline{1-1} \cline{3-3}
+\multirow{3}{*}{Multinomial 文本模型}& & 文本表示：使用一个以频数为数值的列向量 \\ \cline{3-3}
+& & \multirow{2}{*}{概率模型：$\hat{P}(w_t|c_k)=\dfrac{\sum_{i=1}^{N}D_{it}z_{ik}}{\sum_{s=1}^{|V|}\sum_{i=1}^{N}D_{is}z_{ik}}$}\\
+& & \\
+\hline
+\end{tabular}
+\section{文本表示}
+\hspace{1.6em} 首先都对文本进行分词处理，使用了IKAnalyzer工具包\footnote{Google Code 开源项目：http://code.google.com/p/ik-analyzer}。这是一个java环境下常用的分词工具\footnote{使用手册：http://wenku.baidu.com/view/f27d63d676eeaeaad1f33080.html}进行文本分词。根据不同的模型，来表示每一个训练文档。
+\subsection{Bernoulli 文本模型}\label{bernoulli}
+\hspace{1.6em} 每一段文本用一个分量只有二元取值的列向量来表示。用0表示对应的单词在该文本中未出现，1表示对应的单词在文本中出现。用$\mathbf{V}$表示词汇表，每一个文本都可以表示成$|\mathbf{V}|$维的0-1列向量，但是我们没有考虑每个单词出现的次数这一因素。
+\subsection{Multinomial 文本模型}
+\hspace{1.6em} 每个文本都用一个分量由整数值组成的列向量，每个值代表对应的词出现的次数（频数）。在文本的表示中，利用了包括频数在内的信息，相比[\ref{bernoulli}]具有更多的有效信息，但开销更大。
+\section{特征选择}
+\subsection{Bernoulli 文本模型}\label{bernoulli5}
+\hspace{1.6em} 我们用$D_i$表示第$i$个文本的特征向量，$D_{it}=0$表示单词$w_t$并没有出现(absence)在文本$D_i$中，$D_{it}=1$表示单词$w_t$出现(presence)在文本$D_i$中；则$P(w_t|c_k)$则表示单词$w_t$出现在$c_k$类型文本中的概率，$(1-P(w_t|c_k))$反之。那么，文本特征向量$D_i$中，对于单词$w_t$的因素，使其情感属于某一类$c_k$的概率，即已知是属于$c_k$类，那么这个单词则是第$i$个文本中的单词$w_t$的概率是：
+\begin{equation}\label{bernoulli1}
+P(D_{it}|c_k)=D_{it}P(w_t|c_k)+(1-D_{it})(1-P(w_t|c_k))
+\end{equation}
+\indent 同时我们对于每个单词$w_t \in \mathbf{V}$，利用(\ref{bernoulli1})式，由于我们已经假设每个单词的出现都是独立的，对概率值进行连乘即可得到已知为$c_k$类的情感，是文本$D_i$的概率为：
+\begin{equation}\label{bernoulli2}
+P(D_{i}|c_k)=\prod_{t=1}^{|\mathbf{V}|}P(D_{it}|c_k)\\
+=\prod_{t=1}^{|\mathbf{V}|}[D_{it}P(w_t|c_k)+(1-D_{it})(1-P(w_t|c_k))]
+\end{equation}
+\indent 通过训练文本，我们可以得出$P(w_t|c_k)$的估计值（$n_k(w_t)$表示在$c_k$类情感的文本中单词$w_t$出现的次数，$N_k$表示所有的训练文本中所有属于$c_k$类情感的数量）：
+\begin{equation}\label{bernoulli3}
+\hat{P}(w_t|c_k) = \frac{n_k(w_t)}{N_k}
+\end{equation}
+\indent 那么对于某个测试文本$D_j$，我们的目标是找到$c_k$，使得$P(c_k|D_j)$的概率值最大，就可以判定为属于$c_k$类的情感文档。运用贝叶斯公式和全概率公式，我们可以对求$P(c_k|D_j)$最大值进行转化，即求$P(D_j|c_k)\cdot P(c_k)$的最大值。先转化，再利用(\ref{bernoulli2})式展开，可以得到如下目标式：
+\begin{equation}\label{bernoulli4}
+\begin{split}
+{\arg\!\max}_{c_k} P(c_{k}|D_j)&={\arg\!\max}_{c_k}P(D_j|c_k)\cdot P(c_k)\\
+&={\arg\!\max}_{c_k}P(c_k)\prod_{t=1}^{|\mathbf{V}|}[D_{jt}P(w_t|c_k)+(1-D_{jt})(1-P(w_t|c_k))]
+\end{split}
+\end{equation}
+\indent 实际情况下，$\forall k_1, k_2, P(c_{k_1}) = P(c_{k_2})$，因此$P(c_k)$部分可以不计算。\\
+\indent 由于可能会出现0值，所以采用了Laplace校准\footnote{http://hijiangtao.github.io/2014/09/08/Bayes-theorem/}；并且，概率值通常来说较小，要进行乘法计算，最终的结果往往很小，与0十分接近，大小比较不明显，所以将其取自然对数，最终相加同样取满足条件的最大的$c_k$，如果仍然因为太过接近而无法判断，则随机给出分类，最终给出属于P类情感或N类情感的结果。
+\subsection{Multinomial 文本模型}
+\hspace{1.6em} Multinomial文本模型在文本特征表示上，主要利用了单词出现频数的信息，因此，文本的特征向量$D_{it}$中的分量表示在文本$D_i$中单词$w_t$出现的次数。类似地，如果已知情感态度属于$c_k$类，那么是文本$D_i$的概率是（其中，$n_i$表示文本$D_i$的总词数）：
+\begin{equation}\label{multi1}
+P(D_{i}|c_k)=\frac{n_i!}{\prod_{t=1}^{|\mathbf{V}|}D_{it}!}\prod_{t=1}^{|\mathbf{V}|} P(w_t|c_k)^{D_{it}}
+\end{equation}
+\indent 在Multinomial文本模型下，我们规定$z_{ik}=1$表示文本$D_i\in c_k$，否则$z_{ik}=0$，$P(w_t|c_k)$的估计值采用如下的方式计算：
+\begin{equation}\label{multi2}
+\hat{P}(w_t|c_k)=\frac{\sum_{i=1}^{N}D_{it}z_{ik}}{\sum_{s=1}^{|V|}\sum_{i=1}^{N}D_{is}z_{ik}}
+\end{equation}
+\indent 与(\ref{bernoulli4})类似，我们最终的目标函数可以化简为：
+\begin{equation}
+{\arg\!\max}_{c_k} P(c_{k}|D_j)={\arg\!\max}_{c_k}P(c_k)\prod_{h=1}^{\text{len}(D_i)}P(u_h|c_k)
+\end{equation}
+\indent 其中，$u_h$为词汇表中出现在文本$D_j$中的单词。并且使用了与[\ref{bernoulli5}]最后所述相同的技巧。
+\section{结果分析}
+\hspace{1.6em} 在本次实验中，主要采用了四种的评价标准：Precision、Recall、F1-Measure、Accuracy。我们有四个计数：
+\begin{enumerate}
+  \item TP：实际为Positive，预测为Positive
+  \item FP：实际为Negative，预测为Positive
+  \item TN：实际为Negative，预测为Negative
+  \item FN：实际为Positive，预测为Negative
+\end{enumerate}
+\hspace{1.6em} 四个评价标准分别定义为：
+\begin{enumerate}
+  \item Precision = $\dfrac{\text{TP}}{\text{TP}+\text{FP}}$
+  \item Recall = $\dfrac{\text{TP}}{\text{TP}+\text{FN}}$
+  \item F1 = $\dfrac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision}+\text{Recall}}$
+  \item Accuracy = $\dfrac{\text{TP}+\text{TN}}{\text{TP}+\text{FP}+\text{TN}+\text{FN}}$
+\end{enumerate}
+\hspace{1.6em} 最终两种模型的结果如下：
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+  \hline
+  具体模型 & Precision & Recall & F1 & Accuracy \\ \hline
+  Bernoulli 文本模型 & 51.6528\% & 89.8500\% & 65.5959\% & 52.8750\% \\ \hline
+  Multinomial 文本模型 & 84.8534\% & 52.1000\% & 64.5601\% & 71.4000\% \\
+  \hline
+\end{tabular}
+\end{center}
+\hspace{1.6em} Multinomial模型由于利用了更多的数据，基本上结果要优于Bernoulli模型。在执行效率上，由于Multinomial模型进行了一些局部优化，故耗时在15seconds左右，Bernoulli模型耗时需要60seconds左右。
+\section{运行环境}
+\hspace{1.6em} 机器环境：Windows 7 64-bit, Core i3 @2.30GHz, RAM: 6GB；JDK版本：1.8.0\_60，with Eclipse Mars \\
+\indent 包括模型训练和模型测试两部分，生成了两个jar可执行文件，可直接双击运行，或在对应目录下命令行中使用\\
+\indent \texttt{java -jar *.jar}，*为对应文件名，请保证对应的数据文件在对应目录的data目录中。其他未尽事宜请联系作者或查阅ReadMe.txt。
+\end{document} 

@@ -1,2 +1,8 @@
 # CodeWarehouse
-Code Warehouse for some individual projects
+
+#### Code Warehouse for some individual projects
+
+### [NLP](./NLP) 
+
+### [DataMining](./DataMining)
+

@@ -1,0 +1,5 @@
+Bernoulli Model execution time is 83.369 seconds.
+precision = 51.6528%
+recall = 89.8500%
+F1 = 65.5959%
+Accuracy = 52.8750%

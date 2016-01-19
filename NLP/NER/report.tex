@@ -1,0 +1,154 @@
+\documentclass[11pt]{article}
+\usepackage[BoldFont,SlantFont,CJKchecksingle]{xeCJK}
+\usepackage{enumerate}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{paralist}
+\usepackage[colorlinks=true,pdfborder=000,citecolor=magenta,linkcolor=black]{hyperref}
+\usepackage[left=1in,right=1in,top=1in,bottom=1in]{geometry}
+\linespread{1.4}
+\parindent=2em
+\setmainfont{Times New Roman}
+\setCJKmainfont[BoldFont=SimHei]{SimSun} %
+\setCJKmonofont{SimSun}% 设置缺省中文字体
+\begin{document}
+\begin{flushleft}
+\begin{figure}[htb]
+\includegraphics[height=2.5cm]{nju_logo}
+\end{figure}
+{\Huge{\textbf{NLP\ \ 实体识别\ \ 实验报告}}}\\
+\end{flushleft}
+\section{任务描述}
+\hspace{1.6em} 命名实体识别，是指识别文本中具有特定意义的实体，主要包括人名、地名、机构名、专有名词等。命名实体识别是信息提取、问答系统、句法分析、机器翻译等应用领域的重要基础工具，作为结构化信息提取的重要步骤。在 \href{http://bosonnlp.com}{BosonNLP}（标注颜色的可以直接点击超链接访问，下同）命名实体的标注中，文本采用UTF-8进行编码，每行为一个段落标注，共包括2000段落。[1]\\
+\indent 所有的实体以如下的格式进行标注：\{\{实体类型:实体文本\}\}。标注的实体类别包括以下6种：
+\begin{enumerate}
+\setlength{\itemsep}{-5pt}
+\item time: 时间
+\item location: 地点
+\item person\_name: 人名
+\item org\_name: 组织名
+\item company\_name: 公司名
+\item product\_name: 产品名
+\end{enumerate}
+
+\section{序列化标注算法}
+\subsection{Maximum Entropy Markov Model}
+\hspace{1.6em} 最大熵马尔可夫模型[2]，就是把HMM模型和最大熵模型结合在一起。HMM模型是一种概率有限状态模型，对相邻标注的关系进行建模，对应一个概率函数。通过概率生成一个有限自动状态机，带有状态转移和观察，观察序列通过状态序列发射得到，状态之间不断转化，不断生成新的观察符号。设观察序列为$\{o_m\}$，而状态序列为$\{s_m\}$，通我们需要计算状态$s^\prime$转移到状态$s$的概率$P(s|s^\prime)$，称为转移概率；以及当前状态为$s$的条件下，观察到是序列中$o$的概率$P(o|s)$，称为发射概率，选择最大的似然概率估计。\\
+\indent 而最大熵马尔可夫模型，结合了最大熵模型，只需要计算一个参数，记为$P(s|s^\prime, o)\doteq P_{s^\prime}(s|o)$，表示在当前观察到输入为$o$，并且是从状态$s^\prime$转移到状态$s$的概率，计算$t$时刻状态为$s$的向前概率$\alpha_{t}(s)$公式：
+\begin{equation}\label{eq1}
+\alpha_{t+1}(s) = \sum_{s^\prime \in S}\alpha_t(s^\prime)\cdot P_{s^\prime}(s|o_{t+1})
+\end{equation}
+\indent 通过最大熵的原理，我们以当前观察状态是否为$o$这一二元特征，记作$a=\langle b, s \rangle$，函数$f_a(o, s)$ 作为特征函数，在观察序列到$t$时刻取值为：
+\begin{equation}\label{eq2}
+f_{\langle b, s \rangle}(o_t, s_t) = \left\{
+                                       \begin{array}{ll}
+                                         1, & b(o_t)\text{ is true, and } s = s_t; \\
+                                         0, & \hbox{otherwize.}
+                                       \end{array}
+                                     \right.
+\end{equation}
+\indent 我们实际需要的，就是训练一个模型，使得当前观察到的序列为$o$时，其状态为$s$的概率最大，以此体现最大熵的原理。因此，最终有
+\begin{equation}\label{eq3}
+P_{s^\prime}(s|o) = \frac{1}{Z(o, s^\prime)}\exp\left(\sum_{a}\lambda_a f_a(o,s)\right)
+\end{equation}
+\indent 其中，$\lambda_a$为我们需要训练学习的参数，${Z(o, s^\prime)}$为从状态$s^\prime$转移到状态$s$的概率相关值，进行归一化。
+\subsection{Conditional Random Field}\label{crf}
+\hspace{1.6em} 由于MEMM模型容易陷入局部最优解，条件随机场可以看做是MEMM的升级版。理论上，可以更多地利用待识别文本中所提供的上下文信息以得更好的实验结果。CRF与上述最大熵模型的本质区别是：最大熵模型在每个状态都有一个概率模型，在每个状态转移时都要进行归一化，如果某个状态只有一个后续状态，那么该状态到后续状态的跳转概率即为1，但在CRF中，所有的状态上建立一个统一的概率模型，这样在进行归一化时，即使某个状态只有一个后续状态，它到该后续状态的跳转概率也不会为1。[3]因此，CRF中，消除了观察序列$\{o_m\}$和状态序列$\{s_m\}$之间的依赖，也一定程度上解决了了MEMM的陷入局部最优的问题。\\
+\indent 随机场，是一组随机变量的集合。马尔可夫随机场（MRF）则对应一个无向图，这个无向图上的每一个节点对应一个随机变量，节点之间的边表示节点对应的随机变量之间有概率依赖关系。而CRF本质上，就是给定了观察值集合的马尔可夫随机场，我们要确定的是给定观察集合下，这个MRF的分布，也就是条件分布。[4]\\
+\indent 条件随机场有较为成熟且在自然语言处理方面有广为使用的工具，\href{http://sourceforge.net/projects/crfpp/}{CRF++}，本实验中，即使用了此工具。特征提取可参照(\ref{bbb})部分。训练模板template，体现了向前向后看的窗口大小，分别设置向前向后看2个，窗口大小为5。
+\subsection{简化Markov模型}\label{mymodel}
+\hspace{1.6em} 由于MEMM模型训练中，计算的参数较为复杂，所以我使用了一种基于Markov模型的简单概率匹配方法。\\
+\indent 主要通过与需要识别的实体的序列化特征进行匹配，假设当前的观察到的输入序列$O_t$为$o_a, o_b, o_c, \cdots, o_m$，计算在每一种实体中，出现与$O_t$类似特征的概率，即计算该实体下，概率的乘积
+\begin{equation}\label{eq4}
+P(entity) = P_{start}(o_a)\prod_{t = a}^{m-1}P(o_t\rightarrow o_{t+1})
+\end{equation}
+\indent $P_{start}(o_a)$表示以$o_a$为起始的概率、$P(o_t\rightarrow o_{t+1})$表示从观察状态$o_t$转移到$o_{t+1}$的概率。如果超过某个设定的概率值，则说明该观察序列对应的状态序列是某一种需要识别的实体。
+
+\section{特征设定}
+\subsection{分词与词性标注}\label{aaa}
+\hspace{1.6em} 分词采用了数据提供方\href{http://bosonnlp.com}{BosonNLP}[1]提供的API进行分词和词性标注。词性即为特征，并且作为Markov模型中的观察序列。
+\subsection{CRF特征提取}\label{bbb}
+\hspace{1.6em} \href{http://sourceforge.net/projects/crfpp/}{CRF++}工具需要训练数据文件与测试文件，因此在CRF++的训练文本中，总共提取了三列特征。
+\begin{enumerate}
+\setlength{\itemsep}{-5pt}
+  \item 第一列：文本单字，包括标点符号
+  \item 第二列：文本单字的词性，词性由(\ref{aaa})中的方法标注，并且以‘-B’和‘-I’表示这个单字是词的开头或是连接在上一个字后。
+  \item 第三列：单字需要标注的实体，如果是6个实体中的一个，则以该实体名标注，否则标记为Other.
+\end{enumerate}
+\section{结果分析}
+\hspace{1.6em} 在本次实验中，主要采用了两种的评价标准：F1-Measure、Precision。对于(\ref{mymodel})方法使用了F1标准，对于(\ref{crf})方法使用了Precision衡量。
+\subsection{简化Markov模型}
+\hspace{1.6em} 简化Markov模型(\ref{mymodel})交叉验证结果见Table 1。运行时间约为1min，表中为F1-Measure值。输出结果保存在该目录下的result.txt中，第一行数字为Recall，第二行为Precision，第三行即为F1\\
+\indent 可见，由于每一种实体的特征不同，造成了识别标注的结果造成了很大的差异，而这一差异很大程度上是由词性标注的准确性决定的。由于模型过于简化，也带来了较大的波动，尤其体现在地名和产品名上。
+\begin{table}[htbp]
+\setlength{\belowcaptionskip}{10pt}
+\caption{简化Markov模型交叉验证 F1-Measure}
+\centering
+\begin{tabular}{|l|c|c|c|c|c|c|c|}
+\hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+  实体名 & 1 & 2 & 3 & 4 & 5 & 平均值 & 标准差\\ \hline
+  time & 0.5642 & 0.6040 & 0.5112 & 0.5619 & 0.5569& 0.5596& 0.0295 \\ \hline
+  location & 0.1603 & 0.7682 & 0.1816 & 0.2129 & 0.7596& 0.4165& 0.2841\\ \hline
+  person\_name & 0.6642 & 0.6839 & 0.6722 & 0.6979 & 0.7218& 0.6880& 0.0204 \\ \hline
+  org\_name & 0.1627 & 0.2250 & 0.2127 & 0.2191 & 0.2039& 0.2047& 0.0221 \\ \hline
+  company\_name & 0.5208 & 0.4852 & 0.4490 & 0.4800 & 0.5422& 0.4954& 0.0326 \\ \hline
+  product\_name & 0.5120 & 0.5126 & 0.2637 & 0.2825 & 0.2592& 0.3660& 0.1197 \\
+  \hline
+\end{tabular}
+\end{table}
+\subsection{CRF方法结果分析}
+\hspace{1.6em} CRF表2中，结果Presicion定义为：以实体为E，预测实体结果也为E的个数，与所有标准结果中标记为实体E的个数的比值，即不包括非实体即结果中为Other的标记，分别对6类实体进行分别预测。
+\begin{table}[htbp]
+\setlength{\belowcaptionskip}{10pt}
+\caption{CRF交叉验证 Precision}
+\centering
+\begin{tabular}{|l|c|c|c|c|c|c|c|}
+\hline
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+实体名 & 1 & 2 & 3 & 4 & 5 & 平均值 & 标准差\\ \hline
+time&   0.8466&	0.8244&	0.8792&	0.8637&	0.8528& 0.8533& 0.0182 \\ \hline
+location&	0.5789&	0.5472&	0.5228&	0.5465&	0.4713& 0.5333& 0.0358 \\ \hline
+person\_name&	0.6027&	0.6315&	0.6554&	0.6629&	0.6392& 0.6383& 0.0210 \\ \hline
+org\_name&	0.5311&	0.5813&	0.6130&	0.6007&	0.5233& 0.5699& 0.0364 \\ \hline
+company\_name&	0.3745&	0.4141&	0.3985&	0.3585&	0.3910& 0.3873& 0.0193 \\ \hline
+product\_name&	0.5397&	0.5649&	0.5607&	0.5331&	0.5788& 0.5554& 0.0168 \\  \hline
+\end{tabular}
+\end{table} \\
+\indent 可见，CRF方法要较改编的的简化Markov模型有更高的准确率，且在交叉验证中较简化Markov模型的波动较大的地名和产品名上有更好的稳定性。但在训练模型的时间上，则要比简化Markov模型要慢的多。
+\section{实验问题}
+\begin{enumerate}
+\setlength{\itemsep}{-4pt}
+  \item 为了尽最大可能获得较好的分词结果，使用了数据提供方的API进行分词，顺便学习了发送HTTP Request 的方法，一举两得。由于\href{http://sourceforge.net/projects/crfpp/}{CRF++}的版本（推荐0.53或0.58版本）以及性能问题，对于过大的数据处理起来耗时且非正常结束，所以使用了5-fold cross validation，并且原本将第二列中的‘-B’和‘-I’ 作为一列新的特征，但显然特征越多，训练时间更长，所以将两种信息融合为一种特征。
+  \item 在(\ref{mymodel})所述的方法中，确定了一个观察序列$O_t$的最大长度，即窗口长度，最多往后看几个token，默认值为$m=5$个，但是在训练过程中，可以设定得更大，取实体E的词性特征串的最大长度，为了进一步简化模型和提高效率，如果在$O_t$中，出现了实体E的观察序列中不曾出现的特征，则停止该匹配过程，并且把$O_t$串$o_a, o_b, o_c, \cdots, o_m$中的$o_b$作为新的开头，取长度为$m$的新串重复该过程。因此对于测试数据的一个样例，假设样例的特征长度为$n$，那么复杂度为$O(mn)$，效率上较低，因此简化和贪心的策略是必要的。
+  \item 性能评价方面，由于原本完整的实体在特征提取过程中被分成了单词或单字，故如果在预测过程中，只要预测的某个单词是该实体的一部分，即算正确；与正确结果的对比中，如果该词被判定为正确的实体，则算正确。在CRF方法中，则直接比较除Other标签外，预测结果与正确结果，如果结果一致则算正确。
+\end{enumerate}
+\section{运行说明}
+机器环境：Windows 7 64-bit, Core i3 @2.30GHz, RAM: 6GB；JDK版本：1.8.0\_60，with Eclipse Mars\\
+简化Markov模型运行说明：
+\begin{itemize}
+\setlength{\itemsep}{-5pt}
+  \item 该目录中file文件夹下的所有文件为词性标注和分词的结果，由于调用API分词有频率和次数限制，且进行一次分词需要花费1s左右，故将分词结果存储下来，避免了频繁调用。因此分词部分在源代码中以注释的方式体现。运行时请将API工具包BosonUnirest.jar和file文件夹和BosonNLP\_NER\_6C.txt
+  \item 编译并运行Markov模型生成运行结果：输出信息仅包括5次交叉验证的结果。命令行编译方式：
+  \item \texttt{> javac -cp .;BosonUnirest.jar NERTest.java} $\rightarrow$ 请注意-cp之后的点！
+  \item \texttt{> java -cp .;BosonUnirest.jar NERTest}
+\end{itemize}
+\indent CRF++方法运行(命令行)说明：
+\begin{itemize}
+\setlength{\itemsep}{-5pt}
+  \item 将train.data，test.data以及template文件与可执行文件crf\_learn.exe，crf\_test.ext，以及引用的链接库libcrfpp.dll放在同一文件夹下
+  \item \texttt{> crf\_learn -p 2 template train.data model >> logfile} \\
+    \texttt{>> logfile}表示将训练信息写入文件中，否则直接在命令行输出， \texttt{-p 2}表示使用2个线程运行，可以提高运行效率。即便如此，在本地主机上训练时间也需要40分钟-1小时左右。
+  \item \texttt{> crf\_test -m model test.data >> result}\\
+    \texttt{>> result}表示将预测结果写入文件中，否则直接在命令行输出。
+  \item 由于生成的训练模型较大，并且交叉验证5份数据规模较大，在提交的文件中，未包括训练生成的模型，且只保留了一份交叉验证的训练数据、训练信息日志、测试数据以及测试结果文件，都以1为标志。
+\end{itemize}
+\section{References}
+\begin{enumerate}
+\item BosonNLP - \href{http://bosonnlp.com}{ http://bosonnlp.com }
+\item McCallum A, Freitag D, Pereira F C N. Maximum Entropy Markov Models for Information Extraction and Segmentation[C] //ICML. 2000, 17: 591-598.
+\item \href{http://blog.sina.com.cn/s/blog\_8af106960102v0v1.html}{统计模型之间的比较，HMM，最大熵模型，CRF 条件随机场}
+\item \href{http://blog.sciencenet.cn/blog-261330-682779.html}{条件随机场（CRF）学习}
+\end{enumerate}
+
+\end{document} 
