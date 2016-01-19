@@ -1,8 +1,6 @@
 ## Data Mining Codes for Course in NJU
 
-### Instructor
-
-#### [Li-Jun Zhang](http://cs.nju.edu.cn/zlj/)
+#### Instructor: [Li-Jun Zhang](http://cs.nju.edu.cn/zlj/)
 
 ### [Apriori](./Apriori)
 

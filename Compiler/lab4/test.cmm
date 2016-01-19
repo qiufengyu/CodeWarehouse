@@ -1,0 +1,15 @@
+int main()
+{
+	int i = 2;
+	int j = i + 1;
+	int t = j * 4;
+	int x = t * 5;
+	int d = x - 9;
+	int y = (x+3) / 3;
+	int z = y * 7;
+write(x);
+write(d);
+write(y);
+write(z);
+	return j;
+}

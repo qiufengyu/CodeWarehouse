@@ -1,0 +1,7 @@
+This is a git repository of lab02 of NJU Network Programming
+@author: 121220074 QIU Feng-Yu
+@date: 2015-03-16
+@usage: gcc course.c -o course
+	-./course
+	-do as the guide in the program!
+

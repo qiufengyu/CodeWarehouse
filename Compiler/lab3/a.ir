@@ -1,0 +1,11 @@
+FUNCTION main : 
+DEC t1 40
+i := &t1
+READ t3
+t := t3
+t8 := i + #28
+*t8 := t
+t14 := i + #28
+WRITE *t14
+t19 := i + #32
+RETURN *t19

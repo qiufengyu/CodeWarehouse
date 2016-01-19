@@ -1,0 +1,5 @@
+FUNCTION main : 
+x := #-1
+t3 := x + #2
+x := t3
+RETURN x

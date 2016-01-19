@@ -1,0 +1,31 @@
+create database supermarket
+Users
+CREATE TABLE user(
+id VARCHAR(8) NOT NULL PRIMARY KEY,
+level int(10) NOT NULL
+);
+
+Employee
+CREATE TABLE employee(
+id VARCHAR(8) NOT NULL PRIMARY KEY,
+password VARCHAR(20) NOT NULL,
+level int(10) NOT NULL,
+online int(1) NOT NULL
+);
+
+Trade
+CREATE TABLE Trade(
+id VARCHAR(8) NOT NULL REFERENCES user(id),
+time VARCHAR(50) NOT NULL,
+money decimal(10,2),
+PRIMARY KEY(id,time)
+);
+
+Goods
+CREATE TABLE good(
+id VARCHAR(16) NOT NULL,
+name VARCHAR(200),
+count int(10) NOT NULL,
+price decimal(10,2),
+PRIMARY KEY(id)
+);
