@@ -1,9 +1,10 @@
 ## NJUCS2015 Networking Labs
 
 ### Wireshark
+Use wireshark to catch frames
 
 ### [Course Searching](./lab2)
-Get searching results from the server, then analyse.
+Get searching results from the server, then analyse
 
 ### [Chatting Room](./lab3)
 Create socket and exchange data
