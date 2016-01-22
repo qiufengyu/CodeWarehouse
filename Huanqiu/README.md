@@ -8,10 +8,10 @@ Then write related information into the database.
 
 ### Configurations
 
-> A [Maven](https://maven.apache.org/) Project
+> 1. A [Maven](https://maven.apache.org/) Project
 
-> [Log4j2](http://logging.apache.org/log4j/2.x/) Logger
+> 2. [Log4j2](http://logging.apache.org/log4j/2.x/) Logger
 
-> [MySQL Community Server(5.7.10)](http://dev.mysql.com/downloads/mysql/) as Database
+> 3. [MySQL Community Server(5.7.10)](http://dev.mysql.com/downloads/mysql/) as Database
 
 
