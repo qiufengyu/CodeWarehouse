@@ -1,6 +1,6 @@
 # NLP Codes for course in NJU Autumn 2015.
 
-### Instructor
+### Instructors
 
 #### Traditional Part: [Jia-Jun Chen](http://cs.nju.edu.cn/chenjiajun/)
 
