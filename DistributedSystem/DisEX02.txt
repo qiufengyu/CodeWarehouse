@@ -1,0 +1,35 @@
+@date: 2016-12-​​18
+@contact: qiufengyu1024@gmail.com
+
+Code Files:
+|— .idea                           /* idea project files */
+|— clientfile                      /* local client files */
+|— masterfile(2)                   /* master node files, with 2 backups */
+|— masterfilecache                 /* master node files cache to verification */
+|— serverfile(2)                   /* data on servers, we have 2 servers now */
+|— src                             /* source codes folder */
+|   |— client                      /* source code of client */
+|   |— master                      /* source code of master node */
+|       |— Master.java             /* master program */
+|       |— *Block.java             /* state control block of servers and clients */
+|   |— server                      /* source code of server node */
+|       |— Server.java             /* server1 program */
+|       |— Server2.java            /* server2 program */
+|   `— util                        /* some constants and utility interfaces */
+|— xxxx.iml    /* idea project files */
+`— README.txt                      /* this file */
+
+Execution
+
+0. Configurations: Windows 10, JDK 1.8.0_112, Intellij IDEA 2016.3, no other libraries.
+
+1. Please import the project into Intellij Idea and create new Java Applications of one Master, two Servers, and several Clients
+[请导入Intellij IDEA中执行，新建对应的Java应用程序]
+
+2. In order to run the system easily, all the hostnames and ports are fixed in codes. Please change those in codes if you want to install the system on different machines. Luckily, you can configure the ports and constants in util/Common.java.
+[为了减少不必要的麻烦，所有的连接的主机名、端口号都固定在程序中，如果在不同机器上运行请修改对应的host和端口，端口的维护可以在util/Common.java中指定。]
+
+3. Please make sure that all the file folders are in the exact contents along with the project, and then you can build and run in Intellij directly. [请保证程序运行过程中clientfile，masterfile和serverfile随着项目一起导入工程中，直接在Intellij中运行与验证。]
+
+Should you have any problem, please let me know by email.
+Thanks & Regards

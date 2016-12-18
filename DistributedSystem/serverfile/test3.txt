@@ -1,0 +1,294 @@
+package dict;
+
+import java.awt.*;
+import java.awt.event.*;
+
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.event.*;
+
+@SuppressWarnings("serial")
+public class UI extends JFrame{
+	//WordList
+	private WordList wordList = new WordList();
+	
+	//data
+	private String[] words=wordList.getWa();
+	private String[] acc=wordList.getWb();
+	private String[] exp=wordList.getWc();;
+	
+	//UI Components
+	private JLabel jlb = new JLabel(" Enter the word ");
+	private JTextField jtfInput = new JTextField();
+	private JButton jbtSearch = new JButton(new ImageIcon("search.png"));
+	private JList<MyListItem> jltWordlist = new JList<MyListItem>();
+	private final DefaultListModel<MyListItem> model = new DefaultListModel<MyListItem>();  
+	private JScrollPane scrollPane;	
+	private JTextArea jtaAcc= new JTextArea();
+	private JTextArea jtaExp= new JTextArea();	
+	//For JLabel
+	private static final Font font1 = new Font("Calibri",Font.PLAIN+Font.BOLD,14);
+	//For Accent
+	private static final Font font2 = new Font("Times New Roman",Font.BOLD,16);
+	//For Chinese
+	private static final Font font3 = new Font("微软雅黑",Font.BOLD,16);
+	private static final Font font4 = new Font("黑体",Font.BOLD,15);
+	//For JTextFiled
+	private static final Font font5 = new Font("Calibri",Font.PLAIN,14);
+	
+	//icon for the dialog
+	ImageIcon icon = new ImageIcon("hehe.png");
+	
+	//Default Constructor
+	/**
+	 * @throws Exception
+	 */
+	@SuppressWarnings("unchecked")
+	public UI() throws Exception{
+		//Components
+		JPanel p1 = new JPanel();
+		p1.setLayout(new BorderLayout());
+		jlb.setFont(font1);
+		p1.add(jlb, BorderLayout.WEST);
+		p1.add(jtfInput, BorderLayout.CENTER);
+		jbtSearch.setBackground(Color.WHITE);
+		p1.add(jbtSearch,BorderLayout.EAST);
+		add(p1,BorderLayout.NORTH);
+		
+		jtfInput.setFont(font5);
+		
+		//JList		
+		jltWordlist.setModel(model);
+		jltWordlist.setFixedCellWidth(220);		
+		jltWordlist.setCellRenderer(new MyCellRenderer());	
+		//Model
+		for (int i = 0; i < words.length; i++) {
+			MyListItem item = new MyListItem(words[i]);
+			model.addElement(item);  
+		}
+		//jltWordlist.setFont(font1);
+		scrollPane = new JScrollPane(jltWordlist);		
+		add(scrollPane,BorderLayout.WEST);
+		
+		//Display search results
+		JPanel p3 = new JPanel();
+		p3.setLayout(new GridLayout(2,1));
+		jtaAcc.setFont(font2);
+		//Song Yang 121220087
+		//Disable editing
+		jtaAcc.setEditable(false);
+		jtaExp.setFont(font3);
+		jtaExp.setEditable(false);
+		//TitledBorder
+		//http://docs.oracle.com/javase/1.5.0/docs/api/javax/swing/BorderFactory.html
+		TitledBorder titleBorder1 = BorderFactory.createTitledBorder(null,//Border border,
+                "【音标】",//String title,
+                TitledBorder.LEFT,//int titleJustification,
+                TitledBorder.TOP,//int titlePosition,
+                font4,//Font titleFont,
+                Color.BLACK);//Color
+		TitledBorder titleBorder2 = BorderFactory.createTitledBorder(null,//Border border,
+                "【释义】",//String title,
+                TitledBorder.LEFT,//int titleJustification,
+                TitledBorder.TOP,//int titlePosition,
+                font4,//Font titleFont,
+                Color.BLACK);//Color
+		jtaAcc.setBorder(titleBorder1);
+		p3.add(jtaAcc);
+		jtaExp.setBorder(titleBorder2);	
+		p3.add(jtaExp);
+		add(p3,BorderLayout.CENTER);
+		
+		//System.out.println(wordList.getStart("ability-t", 0, 36671));
+		//System.out.println(wordList.getEnd("ability-t"));
+		
+		//All JList Reference: http://www.iteye.com/topic/293188
+		//Swing开发之JList篇		
+		//JList ListSelectionListener
+		//But something wrong
+		//So use MouseListener and Keyboard(up and down only) Listener
+		jltWordlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); 
+		jltWordlist.addListSelectionListener(
+				new ListSelectionListener() {
+					public void valueChanged(ListSelectionEvent e) {
+						//Some error and exception happens	
+						//Perhaps listeners collide with each other
+						
+						//I ask Tao Kun(121220090) for help!
+						
+						/*String temp = (String)jlt.getSelectedValue();
+						jtf.setText(temp);
+						int index = wordList.getStart(temp, 0, 36671);
+						if(index != -1) {
+							jtfAcc.setText(acc[index]);
+							jtfExp.setText(exp[index]);
+						}*/
+					}
+					
+				}
+		);
+		
+		/** JList MouseListener(Adapter) */
+		jltWordlist.addMouseListener(
+			//if new MouseListener all functions are required overriding with empty method!!!
+			//Eclipse told me!
+			//So MouseAdapter
+			new MouseAdapter() {
+				public void mouseClicked(MouseEvent me) {
+					String temp = ((MyListItem)jltWordlist.getSelectedValue()).getString();
+					jtfInput.setText(temp);
+					int index = wordList.getStart(temp, 0, 36671);
+					if(index != -1) {
+						jtaAcc.setText("    "+acc[index]);
+						jtaExp.setText("    "+exp[index]);
+					}
+				}
+			}
+		);
+		
+		/** JList Keyboard(UP and DOWN) Listener(Adapter) */
+		jltWordlist.addKeyListener(
+				new KeyAdapter() {
+					public void keyReleased(KeyEvent ke) {
+						if(ke.getKeyCode() == KeyEvent.VK_UP || ke.getKeyCode() == KeyEvent.VK_DOWN
+								|| ke.getKeyCode() == KeyEvent.VK_ENTER) {
+							String temp = ((MyListItem)jltWordlist.getSelectedValue()).getString();
+							jtfInput.setText(temp);
+							int index = wordList.getStart(temp, 0, 36671);
+							if(index != -1) {
+								jtaAcc.setText("    "+acc[index]);
+								jtaExp.setText("    "+exp[index]);
+							}
+						}
+						//else do nothing
+					}
+				});
+		
+		/** JTextField for the word Keyboard actionListener */
+		jtfInput.addKeyListener(new KeyAdapter() {
+			//Why released trigger?
+			//The getText is up-to-date!
+			public void keyReleased(KeyEvent e) {
+				int keyCode = e.getKeyCode();
+				String word=(jtfInput.getText()).toLowerCase();					
+				//Enter
+				if(keyCode == KeyEvent.VK_ENTER){
+					//check
+					if(word != null) {
+						int startPosition = wordList.getStart(word, 0, 36671);
+						if(startPosition != -1) {
+							int endPosition = wordList.getEnd(word);
+							if(endPosition - startPosition >= 100) {
+								endPosition = startPosition+100;
+							}
+							model.clear();
+							if(startPosition != -1 && endPosition != -1) {
+								for(int i = startPosition; i<=endPosition; i++) {
+									MyListItem item = new MyListItem(words[i]);
+									model.addElement(item);  
+								}
+									//model.addElement(words[i]);
+								jtfInput.setText(words[startPosition]);
+								jtaAcc.setText("    "+acc[startPosition]);
+								jtaExp.setText("    "+exp[startPosition]);
+							}						
+						}
+						else {//can't find
+							int[] candidates=wordList.fixedSearch(word);
+							model.clear();
+							for(int i = 0; i < candidates.length; i++) {
+								if( candidates[i] != -1) {
+									MyListItem item = new MyListItem(words[candidates[i]]);
+									model.addElement(item);
+								}  
+							}
+							if(candidates[0] != -1)
+								JOptionPane.showMessageDialog(null, "Sorry, we can't find the proper word.\nPerhaps you mean \""
+									+ words[candidates[0]] + "\" or some other words?", "Sorry" , JOptionPane.QUESTION_MESSAGE, icon);
+							else 
+								JOptionPane.showMessageDialog(null, "Sorry, we can't find the proper word.", "Sorry" , JOptionPane.QUESTION_MESSAGE,icon);
+						}
+					}
+				}
+				/** Characters and other keys */				
+				/*if((keyCode == KeyEvent.VK_MINUS) || (keyCode >= KeyEvent.VK_A && keyCode <= KeyEvent.VK_Z)
+						|| keyCode == KeyEvent.VK_BACK_SPACE || keyCode == KeyEvent.VK_DELETE || keyCode == KeyEvent.VK_SPACE) {								
+					*/
+					//char newchar = (char)(keyCode);
+					//word = word + newchar;
+					//word=word.replaceAll("-","");
+				else {
+					int startPosition = wordList.getStart(word, 0, 36671);
+					int endPosition = wordList.getEnd(word);
+					if(endPosition - startPosition >= 100) {
+						endPosition = startPosition+100;
+					}
+					model.clear();
+					if(startPosition != -1 && endPosition != -1) {
+						for(int i = startPosition; i<=endPosition; i++) {
+							MyListItem item = new MyListItem(words[i]);
+							model.addElement(item);  
+						}
+							//model.addElement(words[i]);
+						jtaAcc.setText(null);
+						jtaExp.setText(null);
+					}					
+				}
+
+			}		
+		});
+		
+		/** Search click action listener */
+		jbtSearch.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String temp = (jtfInput.getText()).toLowerCase();
+				if(temp != null) {
+					int startPosition = wordList.getStart(temp, 0, 36671);
+					if(startPosition != -1) {
+						int endPosition = wordList.getEnd(temp);
+						if(endPosition - startPosition >= 100) {
+							endPosition = startPosition+100;
+						}
+						model.clear();
+						if(startPosition != -1 && endPosition != -1) {
+							for(int i = startPosition; i<=endPosition; i++) {
+								MyListItem item = new MyListItem(words[i]);
+								model.addElement(item);  
+							}
+								//model.addElement(words[i]);
+							jtfInput.setText(words[startPosition]);
+							jtaAcc.setText("    "+acc[startPosition]);
+							jtaExp.setText("    "+exp[startPosition]);
+						}
+					}
+					else {//can't find
+						int[] candidates=wordList.fixedSearch(temp);
+						model.clear();
+						for(int i = 0; i < candidates.length; i++) {
+							if( candidates[i] != -1) {								
+								MyListItem item = new MyListItem(words[candidates[i]]);
+								model.addElement(item);
+							}  
+						}
+						if(candidates[0] != -1)
+							JOptionPane.showMessageDialog(null, "Sorry, we can't find the proper word.\nPerhaps you mean \""
+						+ words[candidates[0]] + "\" or some other words?", "Sorry" , JOptionPane.QUESTION_MESSAGE,icon);
+						else 
+							JOptionPane.showMessageDialog(null, "Sorry, we can't find the proper word.", "Sorry" , JOptionPane.QUESTION_MESSAGE,icon);
+					}
+				}
+			}
+		});		
+	}
+	
+	public static void main(String[] args) throws Exception{
+		
+		UI ui=new UI();
+		ui.setTitle("Dictionary");
+		ui.setSize(650,450);
+		ui.setLocationRelativeTo(null);
+		ui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		ui.setVisible(true);
+	}
+	
+}

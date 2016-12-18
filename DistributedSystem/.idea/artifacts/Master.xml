@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Master">
+    <output-path>$PROJECT_DIR$/out/artifacts/Master</output-path>
+    <root id="archive" name="DistributedSystem.jar">
+      <element id="module-output" name="DistributedSystem" />
+    </root>
+  </artifact>
+</component>
