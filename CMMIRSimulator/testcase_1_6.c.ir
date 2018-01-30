@@ -1,0 +1,10 @@
+FUNCTION inc :
+PARAM t1
+t2 := t1 + #1
+RETURN t2
+FUNCTION main :
+t3 := #5
+ARG t3
+t3 := CALL inc
+WRITE t3
+RETURN #0

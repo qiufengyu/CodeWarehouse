@@ -1,0 +1,5 @@
+FUNCTION main :
+t3 := #3
+t3 := #21 / t3
+WRITE t3
+RETURN #0

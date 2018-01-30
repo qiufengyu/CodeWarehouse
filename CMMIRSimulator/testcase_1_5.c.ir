@@ -1,0 +1,12 @@
+FUNCTION main :
+t1 := #5
+LABEL L1 :
+IF t1 <= #0 GOTO L3
+t2 := t1 / #2
+IF t2 == #0 GOTO L5
+WRITE t1
+LABEL L5 :
+t1 := t1 - #1
+GOTO L1
+LABEL L3 :
+RETURN #0

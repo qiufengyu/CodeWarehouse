@@ -1,0 +1,20 @@
+FUNCTION main :
+t4 := #5
+t5 := #5
+IF #2 <= t5 GOTO L2
+t5 := #2
+IF #3 <= t5 GOTO L5
+t5 := #3
+LABEL L5 :
+GOTO L3
+LABEL L2 :
+IF #2 >= t4 GOTO L7
+t4 := #2
+IF #3 >= t4 GOTO L9
+t4 := #3
+LABEL L9 :
+LABEL L7 :
+LABEL L3 :
+WRITE t5
+WRITE t4
+RETURN #0

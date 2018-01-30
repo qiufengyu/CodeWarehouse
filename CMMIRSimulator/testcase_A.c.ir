@@ -1,0 +1,13 @@
+FUNCTION main :
+DEC  t1 8
+t2 := &t1 + #0
+*t2 := #5
+t3 := &t1 + #4
+*t3 := #3
+t6 := &t1 + #0
+t5 := *t6
+t8 := &t1 + #4
+t7 := *t8
+t9 := t5 + t7
+WRITE t9
+RETURN #0

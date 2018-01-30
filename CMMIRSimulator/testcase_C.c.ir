@@ -1,0 +1,18 @@
+FUNCTION sum :
+PARAM t1
+t4 := t1 + #0
+t3 := *t4
+t6 := t1 + #4
+t5 := *t6
+t2 := t3 + t5
+RETURN t2
+FUNCTION main :
+DEC  t7 8
+t8 := &t7 + #0
+*t8 := #5
+t9 := &t7 + #4
+*t9 := #3
+ARG &t7
+t11 := CALL sum
+WRITE t11
+RETURN #0

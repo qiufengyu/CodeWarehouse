@@ -1,0 +1,11 @@
+﻿<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file>favicon.ico</file>
+	<file>open.png</file>
+	<file>run.png</file>
+	<file>step.png</file>
+	<file>stop.png</file>
+	<file>quit.png</file>
+	<file>about.png</file>
+</qresource>
+</RCC>
