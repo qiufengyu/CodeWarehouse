@@ -25,3 +25,6 @@ NJU Hadoop & Mapreduce Course in 2016, Fall, for graduated students
 
 ### 8. [CMMIRSimulator](./CMMIRSimulator)
 An interpreter for intermediate code of C-like programming language
+
+### 9. [CS229ML](./CS229ML)
+CS229 Machine Learning, on Coursera and Stanford.
